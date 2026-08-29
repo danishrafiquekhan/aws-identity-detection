@@ -1,31 +1,23 @@
-# Detection: IAM Self-Privilege-Escalation Sequence
+# IAM self-privilege-escalation
 
-**Status: attack pattern verified reproducible (via `simulate-privesc.sh` against LocalStack); detection query designed but not fired against live CloudTrail** (see gap below).
+## What this is about
+An identity creating another IAM principal and immediately handing it `AdministratorAccess` — sometimes attaching a policy to itself — within seconds of creating it. This is one of the best-documented cloud privilege-escalation patterns out there (Rhino Security Labs' `pmapper` and `weirdAAL` catalog a whole family of variants). Maps to T1098, Account Manipulation.
 
-## What this validates
-A user/role creating an IAM principal and immediately granting it `AdministratorAccess` (or attaching a policy to itself), within seconds — one of the best-known IAM privilege-escalation and persistence patterns. Real-world tools like Rhino Security Labs' `pmapper`/`weirdAAL` catalog dozens of variants of "identity grants itself more access than it started with."
-
-**ATT&CK:** T1098 (Account Manipulation) / cloud IAM privilege escalation.
-
-## Reproduce the attack pattern (safe, local, free)
+## Running the attack pattern yourself
 ```bash
 cd ~/securitylab/localstack && docker compose up -d
 ./simulate-privesc.sh
 ```
-This runs three real AWS API calls (`iam create-user`, `iam attach-user-policy`, `iam create-access-key`) against LocalStack — same API shape as real AWS, zero cost, zero real account involved.
+Three real AWS API calls — `iam create-user`, `iam attach-user-policy`, `iam create-access-key` — against LocalStack. Same request shape as real AWS, no cost, no real account anywhere near it.
 
-## Ideal tool vs. what I used
-| | Ideal (catalog spec) | What I actually used |
-|---|---|---|
-| Log source | AWS CloudTrail | LocalStack Community's own request log (CloudTrail emulation is a LocalStack **Pro** feature, not free) |
-| Detection engine | GuardDuty (managed) or a CloudTrail Athena/Insights query | Hand-written detection query below, designed against CloudTrail's real event shape so it's a straight port once you have a real (free-tier) AWS account |
-| Evidence | GuardDuty finding or CloudTrail query result screenshot | LocalStack terminal output (above) proving the attack sequence is real and reproducible |
+## What I used instead of the "ideal" tools
+The catalog spec here calls for CloudTrail + GuardDuty. I don't have a CloudTrail feed to work with — LocalStack Community doesn't emit CloudTrail-format logs (that's a Pro-only feature), and I'm not paying for GuardDuty just to test a detection query. So the attack simulation is real and reproducible against LocalStack; the detection query below is written directly against CloudTrail's actual event schema so it's ready to point at a real trail the moment I have one, but I haven't run it against real output yet.
 
-## The detection query (written for real CloudTrail — not runnable against LocalStack Community)
+## The query
 ```sql
--- Athena query against a CloudTrail table, or adapt to GuardDuty/Security Hub
--- finding filters. Flags: same actor, same session, IAM user creation
--- followed by an admin-equivalent policy attach, within 5 minutes.
+-- Athena over a CloudTrail table (or adapt as a GuardDuty/Security Hub finding
+-- filter). Looks for: same actor, IAM user creation followed by an
+-- admin-equivalent policy attach, within a 5-minute window.
 WITH iam_events AS (
   SELECT
     eventtime,
@@ -40,13 +32,12 @@ SELECT *
 FROM iam_events
 WHERE eventname = 'AttachUserPolicy'
   AND requestparameters LIKE '%AdministratorAccess%'
-  -- and a prior CreateUser by the same actor_arn within the last 5 minutes
-  -- (self-join on actor_arn + time window — omitted here for brevity, see
-  -- the "what I learned" note below for why this needs a real account to finish)
+  -- plus a prior CreateUser from the same actor_arn within 5 minutes —
+  -- that's a self-join on actor_arn + time window, left out here since I
+  -- can't actually test it against real data yet (see below)
 ```
 
-## What I learned / trade-offs
-Writing the *attack simulation* against LocalStack was straightforward and genuinely free. Writing the *detection* honestly could not be finished the same way: LocalStack Community doesn't emit CloudTrail-format events at all, so there's no real log to query locally, and I chose not to fabricate a "detection" that only ever ran against a hand-crafted sample log — that would be closer to writing a query in a vacuum than validating one. The query above is written correctly against real CloudTrail's schema and is ready to run the moment there's a real (AWS free-tier) CloudTrail trail to point it at; documenting that gap honestly is more useful than pretending it's finished.
+## Where I stopped, and why
+I could have made up a sample CloudTrail-shaped log file and run this query against my own fabricated data, gotten a green checkmark, and called it done. Didn't do that on purpose — testing a query against data I invented to match it doesn't actually validate anything, it just proves I can write matching SQL. The honest state is: the attack is real and runs, the query is written correctly against the real schema, and the actual validation step is waiting on a real AWS free-tier account with CloudTrail turned on. That's the next thing to do here, not a finished item.
 
-## Security note
-`simulate-privesc.sh` only ever targets `--endpoint-url=http://localhost:4566` with LocalStack's placeholder `test`/`test` credentials — it cannot reach or affect a real AWS account even if run by mistake with real credentials exported, since the `--endpoint-url` flag pins every call to localhost.
+`simulate-privesc.sh` only ever points at `--endpoint-url=http://localhost:4566`, so even if it got run with real AWS credentials exported by mistake, it physically can't reach a real account — the endpoint flag pins every call to localhost.

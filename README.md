@@ -1,28 +1,17 @@
-# AWS Identity Detection
+# aws-identity-detection
 
-**Status: in progress** — CloudTrail and GuardDuty-based detection work for identity abuse in AWS.
+Started this because a couple of the detection engineer postings I was looking at specifically called out AWS alongside Microsoft identity, and everything else in this portfolio was Azure/Entra ID. Didn't want a resume that only covers half of what's being asked for.
 
-## What this is
-Detections built against CloudTrail logs and GuardDuty findings for common identity attack patterns (credential misuse, privilege escalation, anomalous API activity).
+`detections/simulate-privesc.sh` runs a real IAM privilege-escalation sequence against LocalStack — create a user, immediately attach AdministratorAccess to it, mint an access key. That exact sequence (create → grant yourself admin → get a key) is one of the most common ways an attacker with a low-priv foothold turns it into full account control. `detections/privesc-detection.md` has the write-up, including the part where I couldn't fully close the loop — more on that below.
 
-## Why I built it
-Detection engineering skills should transfer across cloud providers, not just Microsoft identity — this is the AWS side of that.
+No real AWS account IDs, ARNs, or keys anywhere here. Everything's a placeholder or made up.
 
-## How it works
-- `detections/simulate-privesc.sh` — reproduces a real IAM self-privilege-escalation sequence (create user → attach AdministratorAccess → mint access key) against LocalStack, verified working
-- `detections/privesc-detection.md` — the detection query design for that pattern, written against real CloudTrail's schema, plus an honest gap note (see below)
-- `evidence/` — sanitised sample findings/log excerpts
+## The gap I'm not hiding
+The attack simulation runs for real against LocalStack, free, no AWS account needed. The detection query is written correctly against CloudTrail's actual schema — but LocalStack's free Community edition doesn't generate CloudTrail-format logs at all (that's a Pro feature), so I never actually got to run the query against real output. I could've faked a sample log and run my query against my own fake data, but that proves nothing except that I can write a query that matches data I made up to match it. Left it as a documented gap instead — see `detections/privesc-detection.md`.
 
-## What I learned / trade-offs
-See `detections/privesc-detection.md` in full — short version: the *attack simulation* is genuinely free and reproducible via LocalStack, but LocalStack's free Community edition doesn't emit CloudTrail-format events at all, so the *detection query* is written correctly against real CloudTrail's schema without ever being fired against a live log. Documenting that gap honestly rather than testing against a fabricated sample log that would prove nothing.
-
-## Security note
-No real AWS account IDs, ARNs, or access keys are committed. All identifiers are placeholders or synthetic.
-
-## Running a local AWS emulator for free
-`local-lab/` runs LocalStack in Docker — practice real `aws` CLI/IAM/S3 workflows against a local emulator, no AWS account needed. CloudTrail emulation specifically needs LocalStack Pro (not free) — see `local-lab/README.md` for what's actually available in the free Community edition.
+`local-lab/` has LocalStack itself if you want to run the simulation yourself.
 
 ## One-time setup after cloning
 ```bash
-git config core.hooksPath .githooks   # enables the gitleaks secret-scan on commit
+git config core.hooksPath .githooks
 ```
