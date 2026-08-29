@@ -18,6 +18,9 @@ _(filled in as detections are added)_
 ## Security note
 No real AWS account IDs, ARNs, or access keys are committed. All identifiers are placeholders or synthetic.
 
+## Running a local AWS emulator for free
+`local-lab/` runs LocalStack in Docker — practice real `aws` CLI/IAM/S3 workflows against a local emulator, no AWS account needed. CloudTrail emulation specifically needs LocalStack Pro (not free) — see `local-lab/README.md` for what's actually available in the free Community edition.
+
 ## One-time setup after cloning
 ```bash
 git config core.hooksPath .githooks   # enables the gitleaks secret-scan on commit
