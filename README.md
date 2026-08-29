@@ -9,11 +9,12 @@ Detections built against CloudTrail logs and GuardDuty findings for common ident
 Detection engineering skills should transfer across cloud providers, not just Microsoft identity — this is the AWS side of that.
 
 ## How it works
-- `detections/` — detection logic (Athena/CloudTrail queries or GuardDuty finding mappings)
+- `detections/simulate-privesc.sh` — reproduces a real IAM self-privilege-escalation sequence (create user → attach AdministratorAccess → mint access key) against LocalStack, verified working
+- `detections/privesc-detection.md` — the detection query design for that pattern, written against real CloudTrail's schema, plus an honest gap note (see below)
 - `evidence/` — sanitised sample findings/log excerpts
 
 ## What I learned / trade-offs
-_(filled in as detections are added)_
+See `detections/privesc-detection.md` in full — short version: the *attack simulation* is genuinely free and reproducible via LocalStack, but LocalStack's free Community edition doesn't emit CloudTrail-format events at all, so the *detection query* is written correctly against real CloudTrail's schema without ever being fired against a live log. Documenting that gap honestly rather than testing against a fabricated sample log that would prove nothing.
 
 ## Security note
 No real AWS account IDs, ARNs, or access keys are committed. All identifiers are placeholders or synthetic.
