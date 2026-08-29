@@ -17,3 +17,8 @@ _(filled in as detections are added)_
 
 ## Security note
 No real AWS account IDs, ARNs, or access keys are committed. All identifiers are placeholders or synthetic.
+
+## One-time setup after cloning
+```bash
+git config core.hooksPath .githooks   # enables the gitleaks secret-scan on commit
+```
