@@ -15,3 +15,5 @@ The attack simulation runs for real against LocalStack, free, no AWS account nee
 ```bash
 git config core.hooksPath .githooks
 ```
+
+For AWS IAM concepts explained alongside their Entra ID equivalents, and why testing against LocalStack instead of a real AWS account is both cheaper and safer here, see [Part 4](https://github.com/danishrafiquekhan/security-lab-notes/blob/main/parts/04-identity-security-deep-dive.md) and [Part 8](https://github.com/danishrafiquekhan/security-lab-notes/blob/main/parts/08-cloud-security-iac.md) of `security-lab-notes`.
