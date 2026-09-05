@@ -1,5 +1,7 @@
 **aws-identity-detection**
 
+[![CI](https://github.com/danishrafiquekhan/aws-identity-detection/actions/workflows/ci.yml/badge.svg)](https://github.com/danishrafiquekhan/aws-identity-detection/actions/workflows/ci.yml)
+
 Started this because a couple of the detection engineer postings I was looking at specifically called out AWS alongside Microsoft identity, and everything else in this portfolio was Azure/Entra ID. Did not want a resume that only covers half of what is being asked for.
 
 `detections/simulate-privesc.sh` runs a real IAM privilege-escalation sequence against LocalStack: create a user, immediately attach AdministratorAccess to it, mint an access key. That exact sequence (create → grant yourself admin → get a key) is one of the most common ways an attacker with a low-priv foothold turns it into full account control. `detections/privesc-detection.md` has the write-up, including the part where I could not fully close the loop. More on that below.
