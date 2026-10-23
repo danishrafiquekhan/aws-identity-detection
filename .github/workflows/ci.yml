@@ -15,8 +15,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Pinned to a commit SHA, not the mutable "master" branch ref (which
+      # has moved past its own last tagged release - pinned to the latest
+      # actual release tag's commit instead of master's unreleased tip).
       - name: Shellcheck the privesc simulation script
-        uses: ludeeus/action-shellcheck@master
+        uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0, resolved 2026-10
         with:
           scandir: detections
 
@@ -31,7 +34,8 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Pinned to a commit SHA, not the mutable "v2" tag.
       - name: Gitleaks scan
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9, resolved 2026-10
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
